@@ -1,0 +1,37 @@
+{
+  "process_name": "Goods Delivery Process",
+  "activities": [
+    {
+      "activity_name": "Receive shipping order document",
+      "description": "Customer Service logs the shipping order and shipment details to start the delivery workflow."
+    },
+    {
+      "activity_name": "Check document completeness",
+      "description": "Submitted shipping documents are checked so all mandatory information is present."
+    },
+    {
+      "activity_name": "Return incomplete documents",
+      "description": "Documents with missing information are sent back for correction before processing."
+    },
+    {
+      "activity_name": "Receive goods from customer",
+      "description": "The customer's goods are accepted into the delivery service so handling can begin."
+    },
+    {
+      "activity_name": "Calculate item weight in kilograms",
+      "description": "Shipment weight is measured to check operational limits and determine the next step."
+    },
+    {
+      "activity_name": "Load additional unconfirmed goods onto delivery vehicle",
+      "description": "Extra goods without confirmed orders are loaded onto the vehicle in case recipients place last-minute requests."
+    },
+    {
+      "activity_name": "Determine shipment schedule",
+      "description": "The shipment schedule is set according to the customer's requested delivery timing."
+    },
+    {
+      "activity_name": "Deliver goods to customer address",
+      "description": "The goods are transported and handed over at the destination requested by the customer."
+    }
+  ]
+}

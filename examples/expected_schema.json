@@ -1,0 +1,18 @@
+{
+  "process_name": "Goods Delivery Process",
+  "activities": [
+    {
+      "activity_name": "Receive shipping order document",
+      "label": "BVA",
+      "waste_type": "",
+      "justification": "Required for internal coordination so the delivery workflow has a recorded order. Removing it would hide incoming demand even though the customer does not directly value the logging step."
+    },
+    {
+      "activity_name": "Deliver goods to customer address",
+      "label": "VA",
+      "waste_type": "",
+      "justification": "Directly transforms the customer-requested outcome by moving goods to the destination. Removing it would mean the customer never receives the core service."
+    }
+  ],
+  "parsed": true
+}

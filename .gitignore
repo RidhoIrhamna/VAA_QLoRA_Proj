@@ -1,0 +1,11 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.hf_cache/
+outputs/
+*.safetensors
+*.bin
+*.pt
+.DS_Store
