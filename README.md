@@ -1,12 +1,15 @@
 # Lean Value-Added Analysis with Mistral-7B QLoRA
 
-A small local demo for classifying business-process activities as value-adding (VA), business value-adding (BVA), or non-value-adding (NVA). It uses a QLoRA adapter trained on top of Mistral-7B-Instruct and returns the result as JSON.
+A local demo for automating Value-Added Analysis (VAA), a process analysis technique in Business Process Management (BPM). The project uses a QLoRA adapter fine-tuned on Mistral-7B-Instruct-v0.3 to classify business-process activities and return structured JSON output.
 
-The adapter is available on Hugging Face: [ridoley/mistral7b-vaa-general-qlora](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora).
+## Model and Adapter
 
-The base model is [`mistralai/Mistral-7B-Instruct-v0.3`](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3). You must accept its license on Hugging Face before downloading it.
+- Fine-tuned adapter: [ridoley/mistral7b-vaa-general-qlora](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora)
+- Base model: [`mistralai/Mistral-7B-Instruct-v0.3`](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)
 
-## Classification labels
+Accept the base model's license on Hugging Face before downloading it.
+
+## Classification Labels
 
 | Label | Description |
 | --- | --- |
@@ -14,11 +17,11 @@ The base model is [`mistralai/Mistral-7B-Instruct-v0.3`](https://huggingface.co/
 | **BVA** | The activity is required for business operations, control, or compliance. |
 | **NVA** | The activity does not add value and may represent waste. |
 
-For NVA activities, the model also assigns a waste type from TIMWOODS: Defects, Overproduction, Waiting, Unused talent, Transportation, Inventory, Motion, or Extra-processing.
+For NVA activities, the model also assigns a waste type from TIMWOODS: Defects, Overproduction, Waiting, Unused Talent, Transportation, Inventory, Motion, or Extra-processing.
 
-## How it works
+## Inference Workflow
 
-The app combines the process description with an activity-level prompt, sends it to Mistral-7B with the QLoRA adapter, and parses the generated response into JSON.
+The app combines the process description with activity-level context, sends it to Mistral-7B with the QLoRA adapter, and parses the generated response into JSON.
 
 ```mermaid
 flowchart LR
@@ -47,7 +50,7 @@ The adapter uses the following configuration:
 
 CPU-only execution is not supported by this demo setup.
 
-## Setup
+## Installation
 
 Clone the repository and create a virtual environment:
 
@@ -75,7 +78,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### Hugging Face access
+### Hugging Face Access
 
 1. Create a Hugging Face access token with **Read** permission at [Hugging Face Settings](https://huggingface.co/settings/tokens).
 2. Open the [base model page](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) and accept its license.
@@ -87,7 +90,7 @@ HF_TOKEN=hf_...
 
 Keep the token private. Do not commit `.env` to GitHub.
 
-## Run the command-line demo
+## Run the CLI Demo
 
 Run inference on the example process:
 
@@ -97,7 +100,7 @@ python infer.py --input examples/goods_delivery.json
 
 The result is printed in the terminal and saved to `outputs/last_result.json`.
 
-### Example input
+### Example Input
 
 ```json
 {
@@ -111,7 +114,7 @@ The result is printed in the terminal and saved to `outputs/last_result.json`.
 }
 ```
 
-### Example output
+### Example Output
 
 ```json
 {
@@ -129,7 +132,7 @@ The result is printed in the terminal and saved to `outputs/last_result.json`.
 
 For the expected output structure, see `examples/expected_schema.json`.
 
-## Run the web interface
+## Run the Web Interface
 
 Start the Gradio app:
 
@@ -139,57 +142,25 @@ python app.py
 
 Open the local URL shown in the terminal. You can use the example process or edit it, then select **Classify process** to run the classification.
 
-## Project structure
-
-```text
-vaa_qlora_portfolio/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── .env.example
-├── infer.py
-├── app.py
-├── prompts/
-│   └── system_prompt.txt
-├── examples/
-│   ├── goods_delivery.json
-│   └── expected_schema.json
-└── src/vaa_qlora/
-    ├── engine.py
-    ├── prompt.py
-    └── parse.py
-```
-
-- `infer.py` runs inference from the command line.
-- `app.py` starts the Gradio interface.
-- `prompts/system_prompt.txt` contains the classification instructions.
-- `src/vaa_qlora/engine.py` loads the base model and adapter and generates a response.
-- `src/vaa_qlora/prompt.py` builds the process and activity context.
-- `src/vaa_qlora/parse.py` parses the response and normalizes labels and waste types.
-
-## Publish to GitHub
-
-If you want to publish this folder as a separate repository, run these commands from the project directory:
-
-```powershell
-git init
-git add .
-git commit -m "Add VAA QLoRA inference demo"
-gh repo create mistral7b-vaa-qlora-demo --public --source=. --remote=origin --push
-```
-
-If you do not use GitHub CLI (`gh`), create an empty repository on GitHub and run:
-
-```powershell
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git branch -M main
-git push -u origin main
-```
-
-Check `.gitignore` before pushing. Do not commit `.env`, access tokens, or downloaded model weights.
-
 ## Notes
 
 - This repository contains the inference app, prompt, parser, and Gradio interface. The base model and adapter are downloaded separately.
-- The adapter is available from [Hugging Face](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora); the Mistral base model is loaded in 4-bit.
-- The code repository uses the license specified in `LICENSE`. Check the base model's license and terms separately before redistributing or deploying it.
+- The adapter is hosted on [Hugging Face](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora); the Mistral base model is loaded in 4-bit.
+- Check the base model's license and terms before redistributing or deploying it.
+
+---
+
+## Overall Performance
+
+Evaluated on 253 real-world business-process activities, the QLoRA fine-tuned model achieved 79.05% accuracy and a 76.86% Macro F1-score, outperforming the unadapted Mistral-7B-Instruct-v0.3, Gemini 2.5 Flash Lite, and Llama 3.3 70B baselines. Compared with the base Mistral-7B model, Macro F1 improved by 18.74 percentage points and accuracy improved by 10.67 percentage points.
+
+| Model | Accuracy | Macro F1 |
+| --- | ---: | ---: |
+| Mistral-7B-Instruct-v0.3 (base) | 68.38% | 58.12% |
+| Gemini 2.5 Flash Lite | 66.01% | 63.08% |
+| Llama 3.3 70B | 69.17% | 67.19% |
+| Mistral-7B-Instruct-v0.3 + QLoRA | **79.05%** | **76.86%** |
+
+For the full methodology, detailed evaluation, error analysis, and limitations, see the published paper: [**Automating Value-Added Analysis in Business Processes Using a QLoRA Fine-Tuned Small Language Model — IEEE Xplore**](https://ieeexplore.ieee.org/document/11715129).
+
+*Results are specific to this 253-activity test set; performance may differ on other datasets and business-process domains.*
