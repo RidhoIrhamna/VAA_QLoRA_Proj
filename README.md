@@ -1,62 +1,55 @@
-# Lean Value-Adding Analysis with Mistral-7B QLoRA
+# Lean Value-Added Analysis with Mistral-7B QLoRA
 
-Standalone inference demo for a **QLoRA adapter** that classifies business-process activities into Lean categories:
+A small local demo for classifying business-process activities as value-adding (VA), business value-adding (BVA), or non-value-adding (NVA). It uses a QLoRA adapter trained on top of Mistral-7B-Instruct and returns the result as JSON.
 
-| Label | Meaning |
+The adapter is available on Hugging Face: [ridoley/mistral7b-vaa-general-qlora](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora).
+
+The base model is [`mistralai/Mistral-7B-Instruct-v0.3`](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3). You must accept its license on Hugging Face before downloading it.
+
+## Classification labels
+
+| Label | Description |
 | --- | --- |
-| **VA** | Value-adding — directly transforms the customer-requested outcome |
-| **BVA** | Business value-adding — needed for compliance, control, or operations |
-| **NVA** | Non-value-adding — TIMWOODS waste that can be removed |
+| **VA** | The activity directly contributes to the outcome requested by the customer. |
+| **BVA** | The activity is required for business operations, control, or compliance. |
+| **NVA** | The activity does not add value and may represent waste. |
 
-Adapter on Hugging Face (public):  
-**[ridoley/mistral7b-vaa-general-qlora](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora)**
+For NVA activities, the model also assigns a waste type from TIMWOODS: Defects, Overproduction, Waiting, Unused talent, Transportation, Inventory, Motion, or Extra-processing.
 
-Base model: [`mistralai/Mistral-7B-Instruct-v0.3`](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) (gated — accept the license on that page).
+## How it works
 
-This folder is a **full demo** (CLI + Gradio + parser). Most people who only want the adapter do **not** need it. They can copy the snippet on the [Hub model card](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora) or run `python quickstart.py`.
-
----
-
-## What this project shows
-
-- Parameter-efficient fine-tuning (**QLoRA / LoRA**, rank 16, alpha 32) instead of full 7B fine-tuning
-- Instruction-style Lean/BPM classification with a structured JSON schema
-- 4-bit NF4 inference with PEFT (`PeftModel.from_pretrained`)
-- CLI + Gradio UI you can run locally on a consumer GPU
+The app combines the process description with an activity-level prompt, sends it to Mistral-7B with the QLoRA adapter, and parses the generated response into JSON.
 
 ```mermaid
 flowchart LR
-  A[Process JSON] --> B[System prompt + activity context]
-  B --> C[Mistral-7B Instruct 4-bit]
-  D[LoRA adapter on Hub] --> C
-  C --> E[JSON: VA / BVA / NVA + waste type]
+  A[Process JSON] --> B[Prompt and activity context]
+  B --> C[Mistral-7B Instruct, 4-bit]
+  D[QLoRA adapter from Hugging Face] --> C
+  C --> E[JSON classification]
 ```
 
-Adapter config (from the Hub repo):
+The adapter uses the following configuration:
 
 | Setting | Value |
 | --- | --- |
-| Method | QLoRA NF4 + LoRA |
-| Rank `r` | 16 |
+| Fine-tuning method | QLoRA (NF4) with LoRA |
+| Rank (`r`) | 16 |
 | LoRA alpha | 32 |
 | Dropout | 0.05 |
-| Targets | `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj` |
+| Target modules | `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj` |
 
----
+## Requirements
 
-## Hardware
+- Python environment supported by the packages in `requirements.txt`
+- NVIDIA GPU with CUDA support
+- Around 8–12 GB of VRAM is recommended for 4-bit inference; actual usage depends on the runtime and input length
+- Around 15 GB of free disk space for the base-model cache on the first run
 
-| Item | Minimum |
-| --- | --- |
-| GPU | NVIDIA CUDA, about **8–12 GB VRAM** (4-bit Mistral-7B) |
-| Disk | ~15 GB for the base model cache (first run) |
-| OS | Windows / Linux with recent PyTorch + CUDA |
-
-CPU-only machines cannot run this demo as packaged.
-
----
+CPU-only execution is not supported by this demo setup.
 
 ## Setup
+
+Clone the repository and create a virtual environment:
 
 ```bash
 git clone https://github.com/<your-username>/<your-repo>.git
@@ -64,7 +57,9 @@ cd <your-repo>
 python -m venv .venv
 ```
 
-Windows:
+Activate the environment and install the dependencies.
+
+**Windows (PowerShell):**
 
 ```powershell
 .venv\Scripts\activate
@@ -72,7 +67,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Linux / macOS:
+**Linux / macOS:**
 
 ```bash
 source .venv/bin/activate
@@ -80,25 +75,29 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-1. Create a Hugging Face token with **Read** access: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
-2. Open [Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) and accept the license
-3. Put the token in `.env`:
+### Hugging Face access
+
+1. Create a Hugging Face access token with **Read** permission at [Hugging Face Settings](https://huggingface.co/settings/tokens).
+2. Open the [base model page](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) and accept its license.
+3. Add the token to your `.env` file:
 
 ```env
 HF_TOKEN=hf_...
 ```
 
----
+Keep the token private. Do not commit `.env` to GitHub.
 
-## Run the CLI
+## Run the command-line demo
+
+Run inference on the example process:
 
 ```powershell
 python infer.py --input examples/goods_delivery.json
 ```
 
-Output is printed and saved to `outputs/last_result.json`.
+The result is printed in the terminal and saved to `outputs/last_result.json`.
 
-Input schema:
+### Example input
 
 ```json
 {
@@ -112,7 +111,7 @@ Input schema:
 }
 ```
 
-Output schema (see also `examples/expected_schema.json`):
+### Example output
 
 ```json
 {
@@ -128,58 +127,58 @@ Output schema (see also `examples/expected_schema.json`):
 }
 ```
 
-For **NVA**, `waste_type` is one of: Defects, Overproduction, Waiting, Unused talent, Transportation, Inventory, Motion, Extra-processing.
+For the expected output structure, see `examples/expected_schema.json`.
 
----
+## Run the web interface
 
-## Run the Gradio UI
+Start the Gradio app:
 
 ```powershell
 python app.py
 ```
 
-Open the local URL shown in the terminal, keep or edit the example process, then click **Classify process**.
+Open the local URL shown in the terminal. You can use the example process or edit it, then select **Classify process** to run the classification.
 
----
-
-## Project layout
+## Project structure
 
 ```text
 vaa_qlora_portfolio/
 ├── README.md
-├── LICENSE                 # Apache-2.0
+├── LICENSE
 ├── requirements.txt
 ├── .env.example
-├── infer.py                # command-line inference
-├── app.py                  # Gradio demo
-├── prompts/system_prompt.txt
+├── infer.py
+├── app.py
+├── prompts/
+│   └── system_prompt.txt
 ├── examples/
 │   ├── goods_delivery.json
 │   └── expected_schema.json
 └── src/vaa_qlora/
-    ├── engine.py           # load base + adapter, generate
-    ├── prompt.py           # process-flow prompt (same design as training)
-    └── parse.py            # JSON recovery + label / waste normalisation
+    ├── engine.py
+    ├── prompt.py
+    └── parse.py
 ```
 
----
+- `infer.py` runs inference from the command line.
+- `app.py` starts the Gradio interface.
+- `prompts/system_prompt.txt` contains the classification instructions.
+- `src/vaa_qlora/engine.py` loads the base model and adapter and generates a response.
+- `src/vaa_qlora/prompt.py` builds the process and activity context.
+- `src/vaa_qlora/parse.py` parses the response and normalizes labels and waste types.
 
-## Publish this folder as its own GitHub repo
+## Publish to GitHub
 
-From this directory:
+If you want to publish this folder as a separate repository, run these commands from the project directory:
 
 ```powershell
-cd vaa_qlora_portfolio
 git init
 git add .
-git commit -m "Add Mistral-7B VAA QLoRA inference demo"
+git commit -m "Add VAA QLoRA inference demo"
 gh repo create mistral7b-vaa-qlora-demo --public --source=. --remote=origin --push
 ```
 
-Without `gh`:
-
-1. Create an empty public repository on GitHub (no README)
-2. Then:
+If you do not use GitHub CLI (`gh`), create an empty repository on GitHub and run:
 
 ```powershell
 git remote add origin https://github.com/<your-username>/<your-repo>.git
@@ -187,23 +186,10 @@ git branch -M main
 git push -u origin main
 ```
 
-Do not commit `.env` or downloaded weights. `.gitignore` already excludes them.
+Check `.gitignore` before pushing. Do not commit `.env`, access tokens, or downloaded model weights.
 
----
+## Notes
 
-## Notes for recruiters / reviewers
-
-- Weights live on the Hub; this repo is the **application layer** (prompt, parser, inference, UI).
-- The adapter is LoRA-only (~160 MB). The 7B base model is loaded in 4-bit and is **not** redistributed here.
-- The system prompt matches the training setup: full process context, JSON-only output, TIMWOODS waste types for NVA.
-- License: Apache-2.0 for this code, consistent with Mistral-7B-Instruct-v0.3.
-
----
-
-## Bahasa Indonesia (ringkas)
-
-Folder ini adalah **demo inferensi mandiri** untuk adapter QLoRA yang sudah diunggah ke Hugging Face. Anda bisa menyalin seluruh folder `vaa_qlora_portfolio/` ke repository GitHub baru sebagai portofolio.
-
-1. Isi `HF_TOKEN` di `.env` dan terima lisensi Mistral di Hugging Face.
-2. Jalankan `python infer.py` atau `python app.py` (butuh GPU NVIDIA).
-3. Inisialisasi git di dalam folder ini, lalu push ke GitHub (langkah di atas).
+- This repository contains the inference app, prompt, parser, and Gradio interface. The base model and adapter are downloaded separately.
+- The adapter is available from [Hugging Face](https://huggingface.co/ridoley/mistral7b-vaa-general-qlora); the Mistral base model is loaded in 4-bit.
+- The code repository uses the license specified in `LICENSE`. Check the base model's license and terms separately before redistributing or deploying it.
